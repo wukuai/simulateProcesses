@@ -6,14 +6,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ready=new Process();
+   // ready=new PCB();
 //    readyTail=readyHead;
 
-    running=new Process();
-    blocked=new Process();
+//    running=malloc(sizeof(PCB));
+
+    //blocked=new PCB();
 
 //    readyHead->next=readyTail;
-
+    ready->next=NULL;
     running->next=NULL;
     blocked->next=NULL;
 
@@ -28,27 +29,39 @@ MainWindow::~MainWindow()
 }
 
 
-MainWindow::createProcess(int id,int priority,int needtime){
-    Process *process=new Process();
-    process->id=id;
-    process->priority=priority;
-    process->needtime=needtime;
-    process->state=pready;
-    process->next=NULL;
-    Process* temp=ready;
-    while(temp->next!=NULL){
-        temp=temp->next;
-        if(id==temp->id){
-            QMessageBox *message=new QMessageBox();
-            message->setWindowTitle("Warnning");
-            message->setText("进程ID已存在！");
-            message->exec();
-//            message->exec();
-            return 0;
+MainWindow::createPCB(int id,int priority,int needtime){
+    PCB* toBeCreate=(PCB*)malloc(sizeof(PCB));
+    toBeCreate->id=id;
+    toBeCreate->priority=priority;
+    toBeCreate->needtime=needtime;
+    toBeCreate->state=pready;
+    toBeCreate->cputime=0;
+    toBeCreate->next=NULL;
+    PCB* temp=ready;
+    int cnt=3;
+    while(cnt--){
+        if(cnt==2) temp=running;
+        else if(cnt==1) temp=ready;
+        else if(cnt==0) temp=blocked;
+
+        while(temp->next!=NULL){
+            temp=temp->next;
+            if(id==temp->id){
+                QMessageBox *message=new QMessageBox();
+                message->setWindowTitle("Warnning");
+                message->setText("进程ID已存在！");
+                message->exec();
+    //            message->exec();
+                return 0;
+            }
         }
     }
+
+
 //    qDebug()<<temp->id<<temp->priority;
-    temp->next=process;
+    temp=ready;
+    while(temp->next!=NULL) temp=temp->next;
+    temp->next=toBeCreate;
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -76,7 +89,7 @@ void MainWindow::on_pushButton_clicked()
         message->show();
         return;
     }
-    createProcess(id,priority,needtime);
+    createPCB(id,priority,needtime);
 
     displayTable();
 
@@ -86,7 +99,7 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::displayTable(){
 //    ui->tableWidget->clear();
     ui->tableWidget->clearContents();
-    Process *temp=ready;
+    PCB *temp=ready;
     int row=0;
     int cnt=3;
     qDebug()<<"test"<<endl;
@@ -119,8 +132,8 @@ void MainWindow::displayTable(){
 void MainWindow::displayLink(){
 //    return;
 //    if(head==NULL) return;
-//    Process* te/*mp;
-    Process* temp=ready;
+//    PCB* te/*mp;
+    PCB* temp=ready;
     if(temp->next!=NULL){
         temp=temp->next;
         qDebug()<<ready->next->id;
@@ -179,12 +192,12 @@ void MainWindow::on_pushButton_2_clicked()
         return;
     }
     int id=ui->pIDEdit2->text().toInt();
-    terminateProcess(id);
+    terminatePCB(id);
     displayTable();
 }
-MainWindow::terminateProcess(int id){
+MainWindow::terminatePCB(int id){
     bool flag=false;
-    Process* temp=ready;
+    PCB* temp=ready;
     int cnt=3;
     while(cnt--){
         if(cnt==pready) temp=ready;
@@ -195,8 +208,8 @@ MainWindow::terminateProcess(int id){
             temp=temp->next;
             if(temp->id==id){
                 if(temp->next==NULL){
-                   Process* toBeDelete=temp;
-                   Process* head=new Process();
+                   PCB* toBeDelete=temp;
+                   PCB* head=new PCB();
                    if(cnt==pready) head=ready;
                    else if(cnt==prunning) head=running;
                    else if(cnt==pblocked) head=blocked;
@@ -207,7 +220,7 @@ MainWindow::terminateProcess(int id){
                    delete toBeDelete;
                 }
                 else{
-                    Process* toBeDelete=temp->next;
+                    PCB* toBeDelete=temp->next;
                     temp->id=temp->next->id;
                     temp->priority=temp->next->priority;
                     temp->state=temp->next->state;
@@ -232,7 +245,7 @@ MainWindow::terminateProcess(int id){
     }
 }
 
-MainWindow::blockProcess(){
+MainWindow::blockPCB(){
     if(running->next==NULL){
         QMessageBox* message=new QMessageBox();
         message->setWindowTitle("Warnning");
@@ -241,8 +254,8 @@ MainWindow::blockProcess(){
         return 0;
     }
     else{
-        Process* toBeBlock=running->next;
-        Process* bhead=blocked;
+        PCB* toBeBlock=running->next;
+        PCB* bhead=blocked;
         while(bhead->next!=NULL){
             bhead=bhead->next;
         }
@@ -257,8 +270,8 @@ MainWindow::blockProcess(){
 //    while(temp->next!=NULL){
 //        temp=temp->next;
 //        if(temp->id=id){
-//            Process* toBeBlock=temp;
-//            Process* rhead=running;
+//            PCB* toBeBlock=temp;
+//            PCB* rhead=running;
 //            while(rhead->next!=toBeBlock){
 //                rhead=rhead->next;
 //            }
@@ -268,7 +281,7 @@ MainWindow::blockProcess(){
 //                rhead->next=NULL;
 
 //            toBeBlock->next=NULL;
-//            Process* bhead=blocked;
+//            PCB* bhead=blocked;
 //            while(bhead->next!=NULL){
 //                bhead=bhead->next;
 //            }
@@ -292,18 +305,18 @@ void MainWindow::on_pushButton_4_clicked()
         return;
     }
     int id=ui->pIDEdit4->text().toInt();
-    wakeupProcess(id);
+    wakeupPCB(id);
     displayTable();
 }
 
-MainWindow::wakeupProcess(int id){
-    Process* temp=blocked;
+MainWindow::wakeupPCB(int id){
+    PCB* temp=blocked;
     bool flag=false;
     while(temp->next!=NULL){
         temp=temp->next;
         if(temp->id==id){
-            Process* toBeWake=temp;
-            Process* bhead=blocked;
+            PCB* toBeWake=temp;
+            PCB* bhead=blocked;
             while(bhead->next!=toBeWake){
                 bhead=bhead->next;
             }
@@ -316,7 +329,7 @@ MainWindow::wakeupProcess(int id){
             }
             toBeWake->next=NULL;
             toBeWake->state=pready;
-            Process* rhead=ready;
+            PCB* rhead=ready;
             while(rhead->next!=NULL){
                 rhead=rhead->next;
             }
@@ -336,7 +349,7 @@ MainWindow::wakeupProcess(int id){
 
 void MainWindow::on_pushButton_3_clicked()
 {
-    blockProcess();
+    blockPCB();
     displayTable();
 }
 
@@ -354,7 +367,7 @@ MainWindow::FCFS(){
             message->show();
             return 0;
         }
-        Process* toBeRun=ready->next;
+        PCB* toBeRun=ready->next;
         if(toBeRun->next!=NULL)
             ready->next=toBeRun->next;
         else
@@ -364,12 +377,12 @@ MainWindow::FCFS(){
 
         running->next=toBeRun;
     }
-    Process* runningProcess=running->next;
-    runningProcess->cputime++;
-    runningProcess->needtime--;
-    if(runningProcess->needtime==0){
+    PCB* runningPCB=running->next;
+    runningPCB->cputime++;
+    runningPCB->needtime--;
+    if(runningPCB->needtime==0){
         running->next=NULL;
-        delete runningProcess;
+        delete runningPCB;
     }
 }
 

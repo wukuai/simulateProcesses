@@ -8,9 +8,11 @@
 
 #include <QMainWindow>
 #include<QDebug>
-#include<string.h>
 #include<QMessageBox>
 
+#include<string.h>
+#include<stdio.h>
+#include<stdlib.h>
 namespace Ui {
 class MainWindow;
 }
@@ -23,25 +25,28 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    struct Process{
-           int id=-1;
-           int state=-1;//
-           int priority=-1;//越小越优先
-           int needtime=-1;
-           int cputime=0;
-//           int cnt=-1;
-           Process *next=NULL;
-    };
+   typedef struct PCB{
+           int id;
+           int state;//
+           int priority;
+           int needtime;
+           int cputime;
+           PCB *next;
+    }PCB;
 
-    Process *ready,*running,*blocked;
-//    Process *readyTail;
+    PCB* ready=(PCB*)malloc(sizeof(PCB));
+    PCB* running=(PCB*)malloc(sizeof(PCB));
+    PCB* blocked=(PCB*)malloc(sizeof(PCB));
 
-    createProcess(int id,int priority,int needtime);
-    terminateProcess(int id);
+//    PCB *readyTail;
 
-    blockProcess();
-    wakeupProcess(int id);
+    createPCB(int id,int priority,int needtime);
+    terminatePCB(int id);
+
+    blockPCB();
+    wakeupPCB(int id);
     FCFS();
+
     void displayTable();
     void displayLink();
     void showWarnning(QString src);
